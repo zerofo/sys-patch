@@ -16,6 +16,7 @@ jobs:
       - name: Build sys-patch
         run: |
           make dist -j $(nproc)
+          ls
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

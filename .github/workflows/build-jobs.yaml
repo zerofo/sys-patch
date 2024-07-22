@@ -26,7 +26,8 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           file: ./sys-patch.zip
+          repo_token: ${{ secrets.release_token }}
           tag: ${{ github.ref }}
           overwrite: true
           file_glob: true
-          repo_token: ${{ secrets.release_token }}
+          

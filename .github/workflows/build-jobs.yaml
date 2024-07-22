@@ -21,5 +21,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sys-patch
-          path: ./dist
+          path: ./out
    

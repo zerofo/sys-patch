@@ -16,11 +16,17 @@ jobs:
       - name: Build sys-patch
         run: |
           make dist -j $(nproc)
+          zip -r sys-patch.zip out
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: sys-patch
           path: ./out
-      - uses: ncipollo/release-action@v1
-        with:
-          artifacts: "./out"
+       - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.release_token }}
+        file: ./sys-patch.zip
+        tag: ${{ github.ref }}
+        overwrite: true
+        file_glob: true

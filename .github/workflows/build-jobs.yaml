@@ -16,7 +16,7 @@ jobs:
       - name: Build sys-patch
         run: |
           make dist -j $(nproc)
-          zip -r sys-patch.zip out
+          zip -r sys-patch.zip ./out/*
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

@@ -1,33 +1,47 @@
-name: Build jobs
+name: NX_CI
 
 on:
-  workflow_call:
+  push:
+    branches:
+      - master
+  release:
+    types: [published]
+
 
 jobs:
   build:
-    name: build
     runs-on: ubuntu-latest
-    container: ghcr.io/pgalonza/devkita64-atmosphere:latest
+    container: devkitpro/devkita64:latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Build sys-patch
-        run: |
-          make dist -j $(nproc)
-          zip -r sys-patch.zip ./out/*
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: sys-patch
-          path: ./out
-      - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          file: ./sys-patch.zip
-          repo_token: ${{ secrets.release_token }}
-          tag: ${{ github.ref }}
-          overwrite: true
-          file_glob: true
+    - name: Extract owner and repo
+      uses: winterjung/split@v2.1.0
+      id: repo
+      with:
+        msg: ${{ github.repository }}
+        separator: '/'
+    - name: Checkout
+      uses: actions/checkout@master
+      with:
+            ref: master
+            submodules: recursive
+    - name: Build
+      run: |
+        make dist -j $(nproc)
+        zip -r sys-patch.zip ./out/*
+
+    - name: Upload file
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.repo.outputs._1 }} 
+        path: ./out
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.release_token }}
+        file: ./sys-patch.zip
+        tag: ${{ github.ref }}
+        overwrite: true
+        file_glob: true
           
+ 

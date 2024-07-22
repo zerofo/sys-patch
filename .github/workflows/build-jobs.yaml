@@ -33,12 +33,12 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ steps.repo.outputs._1 }} 
-        path: ./out/sys-patch.zip
+        path: ./sys-patch.zip
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.release_token }}
-        file: ./out/sys-patch.zip
+        file: ./sys-patch.zip
         tag: ${{ github.ref }}
         overwrite: true
         file_glob: true

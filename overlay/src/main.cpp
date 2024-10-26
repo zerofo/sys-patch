@@ -104,8 +104,8 @@ public:
         list->addItem(config_noncasigchk_old.create_list_item("noncasigchk_old"));
         list->addItem(config_noncasigchk_new.create_list_item("noncasigchk_new"));
         list->addItem(config_noncasigchk_new2.create_list_item("noncasigchk_new2"));
-        list->addItem(config_nocntchk_old.create_list_item("nocntchk_old"));
-        list->addItem(config_nocntchk_new.create_list_item("nocntchk_new"));
+        list->addItem(config_nocntchk.create_list_item("nocntchk"));
+        list->addItem(config_nocntchk_FW19.create_list_item("nocntchk_FW19"));
 
         list->addItem(new tsl::elm::CategoryHeader("LDR - 0100000000000001"));
         list->addItem(config_noacidsigchk.create_list_item("noacidsigchk"));
@@ -131,8 +131,8 @@ public:
     ConfigEntry config_noncasigchk_old{"fs", "noncasigchk_old", true};
     ConfigEntry config_noncasigchk_new{"fs", "noncasigchk_new", true};
     ConfigEntry config_noncasigchk_new2{"fs", "noncasigchk_new2", true};
-    ConfigEntry config_nocntchk_old{"fs", "nocntchk_old", true};
-    ConfigEntry config_nocntchk_new{"fs", "nocntchk_new", true};
+    ConfigEntry config_nocntchk{"fs", "nocntchk", true};
+    ConfigEntry config_nocntchk_FW19{"fs", "nocntchk_FW19", true};
     ConfigEntry config_noacidsigchk{"ldr", "noacidsigchk", true};
     ConfigEntry config_es1{"es", "es1", true};
     ConfigEntry config_es2{"es", "es2", true};

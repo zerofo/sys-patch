@@ -16,6 +16,7 @@ patch_sysmmc=1   ; 1=(default) patch sysmmc, 0=don't patch sysmmc
 patch_emummc=1   ; 1=(default) patch emummc, 0=don't patch emummc
 enable_logging=1 ; 1=(default) output /config/sys-patch/log.ini 0=no log
 version_skip=1   ; 1=(default) skips out of date patterns, 0=search all patterns
+clean_config=1   ; 1=(default) clean the config file 0=don't clean the config file
 ```
 
 ---
@@ -43,7 +44,7 @@ The overlay can be used to change the config options and to see what patches are
 - Install [devkitpro](https://devkitpro.org/wiki/Getting_Started)
 - Run the following:
   ```sh
-  git clone --recurse-submodules https://github.com/ITotalJustice/sys-patch.git
+  git clone --recurse-submodules https://github.com/impeeza/sys-patch.git
   cd ./sys-patch
   make
   ```

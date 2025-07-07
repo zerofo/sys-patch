@@ -606,11 +606,11 @@ void keygen_to_str(char* s, u8 keygen) {
 } // namespace
 
 int main(int argc, char* argv[]) {
-    constexpr auto ini_path = "/config/sys-patch/config.ini";
-    constexpr auto log_path = "/config/sys-patch/log.ini";
+    constexpr auto ini_path = "/switch/config/sys-patch/config.ini";
+    constexpr auto log_path = "/switch/config/sys-patch/log.ini";
 
-    create_dir("/config/");
-    create_dir("/config/sys-patch/");
+    create_dir("/switch/config/");
+    create_dir("/switch/config/sys-patch/");
     ini_remove(log_path);
 
     // load options

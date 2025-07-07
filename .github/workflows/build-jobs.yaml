@@ -7,7 +7,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-        path: ./sys-patch.zip
  
     container: devkitpro/devkita64
 
@@ -34,20 +33,12 @@ jobs:
         overwrite: true
         name: sys-patch-${{ env.VERSION }}
         path: sys-patch/out/
-
-    - name: Fetch git cli and upload release
-      env: 
-        GH_TOKEN: ${{ secrets.release_token }}
-      run: |
-        if [ ${{ env.TAGVERSION }} = v${{ env.VERSION }} ];
-        then echo "Tag version and makefile version are same, don't publish release, only artifact uploaded."
-        else
-          wget -q $(curl -s https://api.github.com/repos/cli/cli/releases/latest | grep "browser_download_url" | grep "linux_amd64.tar.gz" | head -1 | cut -d '"' -f 4) && \
-          tar -xzf gh*.tar.gz && \
-          chmod +x gh*/bin/gh && \
-          chmod +x gh*/bin/gh && \
-          cp gh*/bin/gh /bin/gh && \
-          rm gh*.tar.gz && \
-          rm -rf gh*
-          gh release create v${{ env.VERSION }} sys-patch/sys-patch.zip --title "Sys-patch version ${{ env.VERSION }}" --repo github.com/$GITHUB_REPOSITORY
-        fi
+    - name: Upload zip to release
+      uses: svenstaro/upload-release-action@master
+      with:
+        repo_token: ${{ secrets.release_token }}
+        file: sys-patch/sys-patch.zip
+        tag: ${{ github.ref }}
+        file_glob: true
+        overwrite: true
+  

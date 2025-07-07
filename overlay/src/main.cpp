@@ -6,8 +6,8 @@
 
 namespace {
 
-constexpr auto CONFIG_PATH = "/config/sys-patch/config.ini";
-constexpr auto LOG_PATH = "/config/sys-patch/log.ini";
+constexpr auto CONFIG_PATH = "/switch/config/sys-patch/config.ini";
+constexpr auto LOG_PATH = "/switch/config/sys-patch/log.ini";
 
 auto does_file_exist(const char* path) -> bool {
     Result rc{};

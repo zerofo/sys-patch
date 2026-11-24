@@ -27,7 +27,7 @@ jobs:
 
         VERSION=$(grep 'export VERSION := ' sys-patch/Makefile | cut -c 19-)
         TAGVERSION=$(curl -s https://api.github.com/repos/$GITHUB_REPOSITORY/releases/latest | grep "tag_name" | head -1 | cut -d '"' -f 4)
-        mv sys-patch/sys-patch.zip sys-patch/sys-patch-v$VERSION.zip
+        cp sys-patch/sys-patch.zip sys-patch/sys-patch-v$VERSION.zip
         SHA256=$(sha256sum sys-patch/sys-patch-v$VERSION.zip)
 
         ZIP_PATH="sys-patch/sys-patch-v${VERSION}.zip"

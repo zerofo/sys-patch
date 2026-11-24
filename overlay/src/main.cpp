@@ -1,6 +1,7 @@
 #define TESLA_INIT_IMPL // If you have more than one file using the tesla header, only define this in the main one
 #define STBTT_STATIC
 #include <tesla.hpp>    // The Tesla Header
+#include <string>
 #include <string_view>
 #include "minIni/minIni.h"
 
@@ -8,6 +9,87 @@ namespace {
 
 constexpr auto CONFIG_PATH = "/switch/config/sys-patch/config.ini";
 constexpr auto LOG_PATH = "/switch/config/sys-patch/log.ini";
+
+auto split_log_value(std::string_view value) -> std::pair<std::string, std::string> {
+    if (value.empty()) {
+        return {{}, {}};
+    }
+
+    const auto offset_start = value.rfind(" (0x");
+    if (offset_start == std::string_view::npos || value.back() != ')') {
+        return {std::string{value}, {}};
+    }
+
+    return {
+        std::string{value.substr(0, offset_start)},
+        std::string{value.substr(offset_start + 1, value.size() - offset_start - 2)}
+    };
+}
+
+class ColouredListItem : public tsl::elm::ListItem {
+public:
+    ColouredListItem(const std::string& text, const std::string& value, tsl::Color value_colour)
+        : tsl::elm::ListItem(text, value), m_value_colour(value_colour) {
+    }
+
+    void draw(tsl::gfx::Renderer *renderer) override {
+        if (this->m_touched && Element::getInputMode() == tsl::InputMode::Touch) {
+            renderer->drawRect(ELEMENT_BOUNDS(this), a(tsl::style::color::ColorClickAnimation));
+        }
+
+        if (this->m_maxWidth == 0) {
+            if (!this->m_value.empty()) {
+                auto [valueWidth, valueHeight] = renderer->drawString(this->m_value.c_str(), false, 0, 0, 20, tsl::style::color::ColorTransparent);
+                this->m_maxWidth = this->getWidth() - valueWidth - 70;
+            } else {
+                this->m_maxWidth = this->getWidth() - 40;
+            }
+
+            auto [width, height] = renderer->drawString(this->m_text.c_str(), false, 0, 0, 23, tsl::style::color::ColorTransparent);
+            this->m_trunctuated = width > this->m_maxWidth;
+
+            if (this->m_trunctuated) {
+                this->m_scrollText = this->m_text + "        ";
+                auto [scrollWidth, scrollHeight] = renderer->drawString(this->m_scrollText.c_str(), false, 0, 0, 23, tsl::style::color::ColorTransparent);
+                this->m_scrollText += this->m_text;
+                this->m_textWidth = scrollWidth;
+                this->m_ellipsisText = renderer->limitStringLength(this->m_text, false, 22, this->m_maxWidth);
+            } else {
+                this->m_textWidth = width;
+            }
+        }
+
+        renderer->drawRect(this->getX(), this->getY(), this->getWidth(), 1, a(tsl::style::color::ColorFrame));
+        renderer->drawRect(this->getX(), this->getTopBound(), this->getWidth(), 1, a(tsl::style::color::ColorFrame));
+
+        if (this->m_trunctuated) {
+            if (this->m_focused) {
+                renderer->enableScissoring(this->getX(), this->getY(), this->m_maxWidth + 40, this->getHeight());
+                renderer->drawString(this->m_scrollText.c_str(), false, this->getX() + 20 - this->m_scrollOffset, this->getY() + 45, 23, tsl::style::color::ColorText);
+                renderer->disableScissoring();
+                if (this->m_scrollAnimationCounter == 90) {
+                    if (this->m_scrollOffset == this->m_textWidth) {
+                        this->m_scrollOffset = 0;
+                        this->m_scrollAnimationCounter = 0;
+                    } else {
+                        this->m_scrollOffset++;
+                    }
+                } else {
+                    this->m_scrollAnimationCounter++;
+                }
+            } else {
+                renderer->drawString(this->m_ellipsisText.c_str(), false, this->getX() + 20, this->getY() + 45, 23, a(tsl::style::color::ColorText));
+            }
+        } else {
+            renderer->drawString(this->m_text.c_str(), false, this->getX() + 20, this->getY() + 45, 23, a(tsl::style::color::ColorText));
+        }
+
+        renderer->drawString(this->m_value.c_str(), false, this->getX() + this->m_maxWidth + 45, this->getY() + 45, 20, a(m_value_colour));
+    }
+
+private:
+    tsl::Color m_value_colour;
+};
 
 auto does_file_exist(const char* path) -> bool {
     Result rc{};
@@ -99,53 +181,81 @@ public:
         auto list = new tsl::elm::List();
 
         list->addItem(new tsl::elm::CategoryHeader("FS - 0100000000000000"));
-        list->addItem(config_noacidsigchk1.create_list_item("noacidsigchk1"));
-        list->addItem(config_noacidsigchk2.create_list_item("noacidsigchk2"));
-        list->addItem(config_noncasigchk_old.create_list_item("noncasigchk_old"));
-        list->addItem(config_noncasigchk_new.create_list_item("noncasigchk_new"));
-        list->addItem(config_nocntchk.create_list_item("nocntchk"));
-        list->addItem(config_nocntchk2.create_list_item("nocntchk2"));
+        list->addItem(config_noacidsigchk1.create_list_item("noacidsigchk_1.0.0-9.2.0"));
+        list->addItem(config_noacidsigchk2.create_list_item("noacidsigchk_1.0.0-9.2.0"));
+        list->addItem(config_noncasigchk1.create_list_item("noncasigchk_1.0.0-3.0.2"));
+        list->addItem(config_noncasigchk2.create_list_item("noncasigchk_4.0.0-16.1.0"));
+        list->addItem(config_noncasigchk3.create_list_item("noncasigchk_17.0.0+"));
+        list->addItem(config_nocntchk1.create_list_item("nocntchk_1.0.0-18.1.0"));
+        list->addItem(config_nocntchk2.create_list_item("nocntchk_19.0.0+"));
 
         list->addItem(new tsl::elm::CategoryHeader("LDR - 0100000000000001"));
-        list->addItem(config_noacidsigchk.create_list_item("noacidsigchk"));
+        list->addItem(config_noacidsigchk4.create_list_item("noacidsigchk_10.0.0+"));
+
+        list->addItem(new tsl::elm::CategoryHeader("ERPT - 010000000000002B"));
+        list->addItem(config_no_erpt.create_list_item("no_erpt"));
 
         list->addItem(new tsl::elm::CategoryHeader("ES - 0100000000000033"));
-        list->addItem(config_es1.create_list_item("es1"));
-        list->addItem(config_es2.create_list_item("es2"));
-        list->addItem(config_es3.create_list_item("es3"));
+        list->addItem(config_es1.create_list_item("es_1.0.0-8.1.1"));
+        list->addItem(config_es2.create_list_item("es_9.0.0-11.0.1"));
+        list->addItem(config_es3.create_list_item("es_12.0.0-18.1.0"));
+        list->addItem(config_es4.create_list_item("es_19.0.0-21.2.0"));
+        list->addItem(config_es5.create_list_item("es_22.0.0+"));
+
+        list->addItem(new tsl::elm::CategoryHeader("AM - 0100000000000023"));
+        list->addItem(config_am1.create_list_item("am_homebrew_fix_22.0.0+"));
+
+        list->addItem(new tsl::elm::CategoryHeader("OLSC - 010000000000003E"));
+        list->addItem(config_olsc1.create_list_item("olsc_6.0.0-14.1.2"));
+        list->addItem(config_olsc2.create_list_item("olsc_15.0.0-18.1.0"));
+        list->addItem(config_olsc3.create_list_item("olsc_19.0.0+"));
 
         list->addItem(new tsl::elm::CategoryHeader("NIFM - 010000000000000F"));
-        list->addItem(config_ctest.create_list_item("ctest"));
-        list->addItem(config_ctest2.create_list_item("ctest2"));
+        list->addItem(config_ctest1.create_list_item("ctest_1.0.0-19.0.1"));
+        list->addItem(config_ctest2.create_list_item("ctest_20.0.0+"));
 
         list->addItem(new tsl::elm::CategoryHeader("NIM - 0100000000000025"));
-        list->addItem(config_nim.create_list_item("nim"));
+        list->addItem(config_nim1.create_list_item("blankcal0crashfix_17.0.0+"));
+        list->addItem(config_nim_fw1.create_list_item("blockfirmwareupdates_1.0.0-5.1.0"));
+        list->addItem(config_nim_fw2.create_list_item("blockfirmwareupdates_6.0.0-6.2.0"));
+        list->addItem(config_nim_fw3.create_list_item("blockfirmwareupdates_7.0.0-10.2.0"));
+        list->addItem(config_nim_fw4.create_list_item("blockfirmwareupdates_11.0.0-11.0.1"));
+        list->addItem(config_nim_fw5.create_list_item("blockfirmwareupdates_12.0.0+"));
 
-        list->addItem(new tsl::elm::CategoryHeader("Disable CA Verification - apply all"));
-        list->addItem(config_ssl1.create_list_item("disablecaverification1"));
-        list->addItem(config_ssl2.create_list_item("disablecaverification2"));
-        list->addItem(config_ssl3.create_list_item("disablecaverification3"));
+        list->addItem(new tsl::elm::CategoryHeader("NS - 010000000000001F"));
+        list->addItem(config_ns1.create_list_item("force_gamecard_region_to_global"));
 
         frame->setContent(list);
         return frame;
     }
 
-    ConfigEntry config_noacidsigchk1{"fs", "noacidsigchk1", true};
-    ConfigEntry config_noacidsigchk2{"fs", "noacidsigchk2", true};
-    ConfigEntry config_noncasigchk_old{"fs", "noncasigchk_old", true};
-    ConfigEntry config_noncasigchk_new{"fs", "noncasigchk_new", true};
-    ConfigEntry config_nocntchk{"fs", "nocntchk", true};
-    ConfigEntry config_nocntchk2{"fs", "nocntchk2", true};
-    ConfigEntry config_noacidsigchk{"ldr", "noacidsigchk", true};
-    ConfigEntry config_es1{"es", "es1", true};
-    ConfigEntry config_es2{"es", "es2", true};
-    ConfigEntry config_es3{"es", "es3", true};
-    ConfigEntry config_ctest{"nifm", "ctest", true};
-    ConfigEntry config_ctest2{"nifm", "ctest2", true};
-    ConfigEntry config_nim{"nim", "nim", true};
-    ConfigEntry config_ssl1{"ssl", "disablecaverification1", false};
-    ConfigEntry config_ssl2{"ssl", "disablecaverification2", false};
-    ConfigEntry config_ssl3{"ssl", "disablecaverification3", false};
+    ConfigEntry config_noacidsigchk1{"fs", "noacidsigchk_1.0.0-9.2.0", true};
+    ConfigEntry config_noacidsigchk2{"fs", "noacidsigchk_1.0.0-9.2.0", true};
+    ConfigEntry config_noncasigchk1{"fs", "noncasigchk_1.0.0-3.0.2", true};
+    ConfigEntry config_noncasigchk2{"fs", "noncasigchk_4.0.0-16.1.0", true};
+    ConfigEntry config_noncasigchk3{"fs", "noncasigchk_17.0.0+", true};
+    ConfigEntry config_nocntchk1{"fs", "nocntchk_1.0.0-18.1.0", true};
+    ConfigEntry config_nocntchk2{"fs", "nocntchk_19.0.0+", true};
+    ConfigEntry config_noacidsigchk4{"ldr", "noacidsigchk_10.0.0+", true};
+    ConfigEntry config_no_erpt{"erpt", "no_erpt", true};
+    ConfigEntry config_es1{"es", "es_1.0.0-8.1.1", true};
+    ConfigEntry config_es2{"es", "es_9.0.0-11.0.1", true};
+    ConfigEntry config_es3{"es", "es_12.0.0-18.1.0", true};
+    ConfigEntry config_es4{"es", "es_19.0.0-21.2.0", true};
+    ConfigEntry config_es5{"es", "es_22.0.0+", true};
+    ConfigEntry config_am1{"am", "am_homebrew_fix_22.0.0+ ", true};
+    ConfigEntry config_olsc1{"olsc", "olsc_6.0.0-14.1.2", true};
+    ConfigEntry config_olsc2{"olsc", "olsc_15.0.0-18.1.0", true};
+    ConfigEntry config_olsc3{"olsc", "olsc_19.0.0+", true};
+    ConfigEntry config_ctest1{"nifm", "ctest_1.0.0-19.0.1", true};
+    ConfigEntry config_ctest2{"nifm", "ctest_20.0.0+", true};
+    ConfigEntry config_nim1{"nim", "blankcal0crashfix_17.0.0+", true};
+    ConfigEntry config_nim_fw1{"nim", "blockfirmwareupdates_1.0.0-5.1.0", true};
+    ConfigEntry config_nim_fw2{"nim", "blockfirmwareupdates_6.0.0-6.2.0", true};
+    ConfigEntry config_nim_fw3{"nim", "blockfirmwareupdates_7.0.0-10.2.0", true};
+    ConfigEntry config_nim_fw4{"nim", "blockfirmwareupdates_11.0.0-11.0.1", true};
+    ConfigEntry config_nim_fw5{"nim", "blockfirmwareupdates_12.0.0+", true};
+    ConfigEntry config_ns1{"ns", "force_gamecard_region_to_global", true};
 };
 
 class GuiLog final : public tsl::Gui {
@@ -165,8 +275,9 @@ public:
             ini_browse([](const mTCHAR *Section, const mTCHAR *Key, const mTCHAR *Value, void *UserData){
                 auto user = (CallbackUser*)UserData;
                 std::string_view value{Value};
+                const auto [status, detail] = split_log_value(value);
 
-                if (value == "Skipped") {
+                if (status == "Skipped") {
                     return 1;
                 }
 
@@ -181,18 +292,20 @@ public:
                 constexpr tsl::Color colour_unpatched{F(250), F(90), F(58), F(255)};
                 #undef F
 
-                if (value.starts_with("Patched")) {
-                    if (value.ends_with("(sys-patch)")) {
-                        user->list->addItem(new tsl::elm::ListItem(Key, "Patched", colour_syspatch));
-                    } else {
-                        user->list->addItem(new tsl::elm::ListItem(Key, "Patched", colour_file));
-                    }
-                } else if (value.starts_with("Unpatched") || value.starts_with("Disabled")) {
-                    user->list->addItem(new tsl::elm::ListItem(Key, Value, colour_unpatched));
+                if (status.starts_with("Patched")) {
+                    const auto is_sys_patch = status.ends_with("(sys-patch)");
+                    const auto display_value = detail.empty() ? std::string{"Patched"} : "Patched @ " + detail;
+                    user->list->addItem(new ColouredListItem(
+                        Key,
+                        display_value,
+                        is_sys_patch ? colour_syspatch : colour_file
+                    ));
+                } else if (status.starts_with("Unpatched") || status.starts_with("Disabled")) {
+                    user->list->addItem(new ColouredListItem(Key, Value, colour_unpatched));
                 } else if (user->last_section == "stats") {
-                    user->list->addItem(new tsl::elm::ListItem(Key, Value, tsl::style::color::ColorDescription));
+                    user->list->addItem(new ColouredListItem(Key, Value, tsl::style::color::ColorDescription));
                 } else {
-                    user->list->addItem(new tsl::elm::ListItem(Key, Value, tsl::style::color::ColorText));
+                    user->list->addItem(new ColouredListItem(Key, Value, tsl::style::color::ColorText));
                 }
 
                 return 1;
